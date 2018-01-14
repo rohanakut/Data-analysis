@@ -1,0 +1,18 @@
+Useful links for learning R and other blogs:
+
+Swapping Axis
+http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/
+Comparison of multilevel categorical variables using correlogram
+http://www.sthda.com/english/wiki/visualize-correlation-matrix-using-correlogram
+Different plots for different variables 
+https://flowingdata.com/2012/05/15/how-to-visualize-and-compare-distributions/
+https://www.tatvic.com/blog/7-visualizations-learn-r/
+
+Generic questions forbasic R implemantation
+https://stackoverflow.com/questions/17216358/eliminating-nas-from-a-ggplot
+https://stackoverflow.com/questions/15951216/too-many-factors-on-x-axis
+https://stackoverflow.com/questions/24901061/in-r-how-do-i-compute-factors-percentage-given-on-different-variable
+http://rprogramming.net/rename-columns-in-r/
+
+Some great projects that I came across during peer review of assignments
+https://s3.amazonaws.com/coursera-uploads/peer-review/5e8e5a1cb5a565b36a8561b05a636e07/Data-analysis-bffss2013---SGM.html
