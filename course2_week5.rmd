@@ -1,0 +1,185 @@
+---
+title: "Statistical inference with the GSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(statsr)
+```
+
+### Load data
+
+Make sure your data and R Markdown files are in the same directory. When loaded
+your data file will be called `gss`. Delete this note when before you submit 
+your work. 
+
+```{r load-data}
+load("course2_week5.Rdata")
+dim(gss)
+```
+
+
+
+* * *
+
+## Part 1: Data
+Generabizability - The data collected is indeed generelizable.This is because random sampling was used to collect data from a house and random houses were selected until the sample size was met.This shows that the data could be generalizable to entire population.
+
+However the data is not completely accurate.There could be many biases involved in the survey such as non-response bias where the house does not wish to participate in the survey.
+
+Causality - This data is not causal.Since this data was randomnly sampled and random assignment was not used we can conclude that the results obtained from the data would not imply causation.They could definetely be correlated but not causal in nature.
+
+* * *
+
+## Part 2: Research question
+Research Question:
+
+Is the age and religious inclination of an individual correlated in any fashion?
+This is the research question that I would like to address and find the solution to.According to my belief as the age increases the religious inclination of a person increase.This means that older people should be more religious compared to the younger generation.
+
+Variables used: age,attend
+
+Interest - I believe that this analysis could give a direct comparison as to how priorities of humans change with their age which might help in analysing human behaviour.
+* * *
+
+## Part 3: Exploratory data analysis
+
+NOTE: Insert code chunks as needed by clicking on the "Insert a new code chunk" 
+button (green button with orange arrow) above. Make sure that your code is visible
+in the project you submit. Delete this note when before you submit your work.
+
+
+In this data I have divided age into 3 groups:
+1. If the age of respondent is less than 35 then he/she is classifide as "young"
+2.If the age is>35 and less than 60 then the respondent is classified as "mid-age"
+3.If the age is >60 then the respondent belongs to "oldage" category
+
+Similarly for the variable attend I have classified the variable into 3 levels namely:
+1.If the respondent attends religioous services atmost once a year then the person is classified as "not religios"
+2.If the person attends services several times a month then he/she is classified as "slightly religious"
+3.If the person attends services every week then he/she is classified as "highly religious"
+```{r}
+rsq1<-gss[,c("age","attend")]
+rsq1<-rsq1%>%
+  mutate(age_category = ifelse(age>60,"oldage",ifelse(age>35,"midage","young")))
+head(rsq1)
+levels(rsq1$attend)[7:9]<-"highly religious"
+levels(rsq1$attend)[1:3]<-"not religious"
+levels(rsq1$attend)[2:4]<-"slightly religious"
+ggplot(data =na.omit(rsq1),aes(x=age_category,fill = attend))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.9)) +
+  geom_histogram(stat="count",position="dodge")
+rsq1<-within(rsq1,rm(age))
+```
+
+
+Observing the above graph there does not seem enough data to support our initial arguement that older people tend to be more religious.Infact midage people are most religious of them all according to the histogram.
+The distribution of religious inclination for young category seems to be fairly uniform.However this data does not give us the most accurate reading as there is a possibility that even after a random sampling a large number of midage'd people have participated in the survey compared to younger and older people and as a result we see a large number of religious people in the midage category.
+Hence this data could be prone to inflation.Even if this is not a possibility then there are other biases introduced in the survey which might lead to wrong interpretations from the graph
+One way to tackle this is to do a inferential based test on the data to find if the variables are dependent or not.
+```{r}
+rsq1_table<-table(rsq1)#<-rowSums(table(rsq1))
+rsq1_table<-cbind(rsq1_table,rowSums(rsq1_table))
+rsq1_table<-rbind(rsq1_table,colSums(rsq1_table))
+colnames(rsq1_table)[4]<-"total_count_of_religious_people"
+rownames(rsq1_table)[4]<-"total_count_based_on_age"
+rsq1_table
+
+```
+  
+The table gives a numerical standpoint on the values of all the levels in the 2 categorical variables used.These calculations are used further to calculate the chi square statistic for the chi square independence tets.
+
+```{r}
+prop.table(table(rsq1),1)*100
+```
+
+A percentage representation of the same table as described above.
+* * *
+
+## Part 4: Inference
+
+NOTE: Insert code chunks as needed by clicking on the "Insert a new code chunk" 
+button (green button with orange arrow) above. Make sure that your code is visible
+in the project you submit. Delete this note when before you submit your work.
+
+Hypothesis:
+  
+The null hypothesis states that there is no correlation between the age and the religious inclination of a person.This means that they are independent of each other.
+
+The alternative hypothesis states that there is a relation between the age and religious inclination of an individual.
+
+Method used:
+
+Since I have 2 categorical variables with more than 2 levels I have used chi-squared independence test to determine if there is a relation between the the age and religious inclination of an individual.
+
+Conditions for Chi square independence test:
+
+Independence - All the sampled observations are independent of each other since they:
+               1. Randomnly sampled(since it is a survey)
+               2. The sampled population is definetely less than 10% of the entire American population
+               3. Each case is contributing only to a prticular cell i.e. every cell is uniquely identifiable and there is no dependence between 2 cells.
+```{r}
+save<-0
+for(i in 1:4){
+  save[i] = rsq1_table[i,"total_count_of_religious_people"]/rsq1_table[4,"total_count_of_religious_people"]
+}
+rsq1_table_inf = cbind(rsq1_table,save)
+colnames(rsq1_table_inf)[5]<-"expected % of religious inclination"
+expected_midage<-0
+expected_oldage<-0
+expected_young<-0
+for(i in 1:4){
+  expected_midage[i] = ceiling(rsq1_table_inf[i,"expected % of religious inclination"]*rsq1_table_inf[4,"midage"])
+  expected_oldage[i] = ceiling(rsq1_table_inf[i,"expected % of religious inclination"]*rsq1_table_inf[4,"oldage"])
+  expected_young[i] = ceiling(rsq1_table_inf[i,"expected % of religious inclination"]*rsq1_table_inf[4,"young"])
+}
+#rsq1_table_inf[1,"expected % of religious inclination"]
+```
+
+```{r}
+rsq1_table_inf<-cbind(rsq1_table_inf,expected_midage)
+rsq1_table_inf<-cbind(rsq1_table_inf,expected_oldage)
+rsq1_table_inf<-cbind(rsq1_table_inf,expected_young)
+```
+
+Attaching expected values to the table
+
+```{r}
+rsq1_table_inf
+```
+           
+The above table contains the expected value and the observed value which is required for calculation of the p-value in chi-square independence test.The expected_midage,expected_young and expected_oldage contain the expected values.For cross checking purposes if we add 
+expected_midage + expected_oldage + expected_young together we get the value equalto the total_count_of_religious_people.
+If in case the value does not exactly match this is beacause I have used a ceiling function to roundoff the values.However this rounding off does not have a major impact on the p value.
+```{r}
+x_square<-0
+for(i in 1:3){
+  x_square = x_square + (rsq1_table_inf[i,"midage"]-rsq1_table_inf[i,"expected_midage"]) ^2 /rsq1_table_inf[i,"expected_midage"]
+  x_square = x_square + (rsq1_table_inf[i,"oldage"]-rsq1_table_inf[i,"expected_oldage"]) ^2 /rsq1_table_inf[i,"expected_oldage"]
+  x_square = x_square + (rsq1_table_inf[i,"midage"]-rsq1_table_inf[i,"expected_midage"]) ^2 /rsq1_table_inf[i,"expected_young"]
+}
+x_square
+```
+
+The chi square statistic value from the above calculation comes out to be 893.0682
+
+```{r}
+pchisq(x_square,4,lower.tail=FALSE)
+
+```
+
+
+On using the r function for calculation the p-value we get a p-value less tha 0.05.This means that there is sufficient evidence to reject the null hypothesis.
+This means that the age and religious inclination of and individual are indeed dependent on one another.
+Therefore our initial assumption was right.
+I have not calculated confidence interval because we cannot calculate confidence interval for chi square independence test.The test is designed for hypothesis testing and not for calculation of confidence interval.

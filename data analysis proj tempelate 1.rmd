@@ -1,0 +1,262 @@
+---
+title: "Exploring the BRFSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+```
+
+### Load data
+
+Make sure your data and R Markdown files are in the same directory. When loaded
+your data file will be called `brfss2013`. Delete this note when before you submit 
+your work. 
+
+```{r load-data}
+load("dataanalysisproj1.RData")
+dim(brfss2013)
+```
+
+
+
+* * *
+
+## Part 1: Data
+  The data in the samples are collected by using stratified sampling method.Since the entire U.S population is divided into different strata(states) and random person from each strata is chosen the study could indeed be generelizable to the entire U.S population.
+  However the main porblem with such type of survey is the the biases introduced during the process.Since this method of sampling can be classified as stratified sampling rather than experiment the correlation obtained from the survey will not imply causation.
+  There are various baises that could be introduced in the sampling.For example if a person randomly selected does not pick-up the phone then an unresponsive bias will be introduced in the survey.This could be one factor that could artificially inflate the results of survey.
+  
+The data is an observational study and not an experimental study.This means that random assignments are not used and hence the data in not causal.
+
+CONCLUSION:
+  The sample is generalizable annd causality cannot be detemined from the factors used in the survey.
+ 
+* * *
+
+## Part 2: Research questions
+
+**Research quesion 1:**
+  My first research question will focus on the relationship between diabetic individuals and the state the reside in.This information will give an insight of the distribution of diabetic individuals over all the states involved in the survey.
+  This correlation plot is useful for medical companies to focus their efforts in particular states where the count of diabetic individuals is considerably larger.For example a medical pill manufacturing company can focus on certain states where the diabetic individuals are higher than the average and try to promote their products that help in reducing the side effects of diabetes,therby increasing their profit. 
+
+Variables used : X_state,diabete3
+
+**Research quesion 2:**
+  The main topic that under focus in this section is whether consumption of sweet beverages can lead to diabetes.According to popular belief higher intake of sweet producs can lead to diabetes.
+  This question can be of interest to medical researchers who are trying to find the main reason for cause of diabetes among the individuals.
+
+Variables used:daibete3,ssbsugar,ssbfrut2
+
+**Research quesion 3:**
+  Is kidney disease and diabetes are related in any way?Can these 2 diseases be correlated with lack of sleep?
+  These are the questions that would be the main area of focus in this section.
+This would help in understanding if diabetes can cause any kidney diseases
+or vice versa.Similarly it would also proove if lack of sleep can be a potential cause of diabetes or not.I have assumed that if an individual has less than 5hrs of sleep then he/she is sleep deprived.
+Relevance: This question could be of interest to hospitals and medical companies.  
+Variables used : diabete3,sleptim1,chckidny
+* * *
+
+## Part 3: Exploratory data analysis
+
+NOTE: Insert code chunks as needed by clicking on the "Insert a new code chunk" 
+button (green button with orange arrow) above. Make sure that your code is visible
+in the project you submit. Delete this note when before you submit your work.
+
+**Research quesion 1:**
+
+```{r}
+grep("state", names(brfss2013), value = TRUE)
+brfss2013 <- brfss2013%>%
+  mutate(diabetes_detected = diabete3)
+brfss2013$diabetes_detected[brfss2013$diabetes_detected== "Yes, but female told only during pregnancy"]<-"Yes"
+brfss2013$diabetes_detected[brfss2013$diabetes_detected=="No, pre-diabetes or borderline diabetes" ]<-"No"
+brfss2013%>%
+  group_by(diabetes_detected)%>%
+  summarise(count=n())
+ccount<-brfss2013 %>%
+  group_by(X_state,diabetes_detected) %>%
+  summarize(count=n())
+new_ccount = subset(ccount,diabetes_detected=="Yes")
+new_ccount
+head(new_ccount)
+ccount
+```
+
+
+```{r}
+rsq1<-new_ccount$X_state
+rsq1<-new_ccount$count
+rsq1 = data.frame(rsq1)
+rsq1 = data.frame(new_ccount)
+head(rsq1$X_state)
+rsq1<-rsq1%>%
+  mutate(per = new_ccount$count*100/sum(new_ccount$count))
+head(rsq1)
+rsq1%>%
+  group_by(X_state)%>%
+  filter(per>2)
+```
+A variable named as _state does not exist in the dataset.The variable that represents the name of states is called as X_state.
+The diabete3 is a categorical variable that contains 4 different values.The values Yes, but female told only during pregnancy and No, pre-diabetes or borderline diabetes have been rounded off to Yes and No respectively to make the analysis easy.
+```{r}
+ggplot(data = brfss2013[brfss2013$diabetes_detected=="Yes",],aes(x=X_state))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.9)) +
+  geom_histogram(stat="count")+
+  ggtitle("Distribution of diabetic individuals v/s States")+
+  xlab("States")+
+  ylab("Number of Diabetic individuals")
+
+```
+
+
+From the above graph it is clear that Florida has a large number of diabetic individuals compared to the rest of the states.The state of guam has the lowest number of diabetic individuals
+This observation is coherent with the statistical analysis where the percentage distribution was calculated.The analysis shows that 6% individuals among all the individuals surveyed who have diabetes reside in florida.
+The distribution cannot be completely accurate as biases such as non-responsive bias can be introduced.
+
+
+**Research quesion 2:**
+In this question I have compared the consumption of Regular soda(ssbsugar) by diabetic and non diabetic individual to see if excessive consumption of soda can have an effect on diabetes.I have done a similar analysis in sweetened drinks variable(ssbfrut2) and then later on compared both the variables together.
+```{r}
+brfss2013%>%
+  group_by(ssbsugar,ssbfrut2,diabetes_detected)%>%
+  filter(diabetes_detected=="Yes")%>%
+  summarise(count=n())
+
+```
+
+The variables used in this section are ssbsugar,ssbfrut2 and diabetes_detected.I have used diabetes_detected variable which was used in previous section for the sake of simplicity in analysis.
+
+```{r}
+ggplot(data = subset(brfss2013,!is.na(ssbsugar)),aes(x=ssbsugar,fill=diabetes_detected))+
+  geom_histogram(binwidth=50,position=position_dodge())+
+  ggtitle("Total consumption of Regular Soda among diabetic and \n non-diabetic individuals")+
+  xlab("Soda consumption")+
+  ylab("Numer of individuals")
+```
+
+The above graph implies that there is no relation of soda consumption and diabetes.Infact the highest number of diabetic patients recorded are the ones that consume almost no soda at all.This implies that consumption of soda may not lead to diabetes.
+
+
+
+```{r}
+ggplot(data = subset(brfss2013,!is.na(ssbfrut2)),aes(x=ssbfrut2,fill=diabetes_detected))+
+  geom_histogram(binwidth=50,position=position_dodge())+
+  ggtitle("Total consumption of Sugar Sweetend Drinks among diabetic \n and non-diabetic individuals")+
+  xlab("Sugar Sweetend Drinks Consumption")+
+  ylab("Number of individuals")
+
+```
+
+The graph implies that the consumption of sugar sweetened drinks does not cause diabetes among individuals.Some of the individuals that have diabetes are among the lowest consumer of sugar sweetend drink.
+
+```{r}
+rsq2 <- brfss2013[,c("diabetes_detected","ssbsugar","ssbfrut2")]
+rsq2 <- data.frame(rsq2)
+head(rsq2)
+rsq2%>%
+  group_by(ssbsugar)%>%
+  summarise(count=n())
+```
+
+Statistical analysis and comparison of variables using box-plots
+
+```{r}
+par(mfrow=c(1,2))
+plot1<-boxplot(na.omit(rsq2$ssbsugar~rsq2$diabetes_detected),col="maroon",main="Soda consumption by individuals \n v/s Diabetes",xlab="Diabetes Detection",ylab="Individuals")
+plot2<-boxplot(na.omit(rsq2$ssbfrut2~rsq2$diabetes_detected),col=c("gray"),main="Sweetened Drink consumption by \n individuals v/s Diabetes",xlab="Diabetes Detection",ylab="Individuals")
+
+```
+
+The box plot gives a comparison of Soda consumption and sweetened drinks consumption by individual with whether they have diabetes or not.From both the box plot of soda and sweet drinks consumption we can see that the distribution of people not having diabetes is wider compared to those having diabetes.
+In case of the soda consumption boxplot the median of diabetic individuals lies on zero while median for non diabetic individuals lies on 100,which means that half of the individuals not having diabetes and consuming soda are between 0-100 while half of the individuals that have diabetes consume no soda at all.Moreover the upper quartile of non diabetic individuals is way above the diabetic individuals indicating a wider range of distribution.
+
+
+Similarly for sweetened drink consumption boxplot even though both the median are at zero since the upper quartile is at a higher point(200) for non diabetic indivisuals than diabetic individuals it prooves that a large number of diabetic individuals consume less sweet drinks than the other category.
+
+Conclusion: From this data we can conclude that swwet and aerated soda drinks and diabetes are independent of each other and hence this negates our original hypothesis.
+
+
+
+
+**Research quesion 3:**
+
+The kidney disease and diabetes status of an individual is explored in this section 
+
+```{r}
+ggplot(data=subset(brfss2013,!is.na(chckidny)),aes(x=chckidny,fill=diabetes_detected))+
+  ggtitle("Diabates comaprison when a person has kidney disease")+
+  xlab("kidney disease")+
+  ylab("number of individuals")+
+  geom_bar(position=position_dodge())
+
+
+```
+
+The graph does not give a clear relation between kidney disease and diabetes hence taking just the condition where the inidvisual has a kidney disease and observing the relation between diabetes and kidnay disease.
+
+```{r}
+ggplot(data=subset(brfss2013[brfss2013$chckidny=="Yes",],!is.na(chckidny)),aes(x=chckidny,fill=diabetes_detected))+
+  ggtitle("Diabates comaprison when a person has kidney disease")+
+  xlab("kidney disease")+
+  ylab("number of individuals")+
+  geom_bar(position=position_dodge())
+
+```
+
+From the above graph it is clear that the people having kidney disease do not necessarily have diabetes as the non diabetic individuals outweigh the diabetic ones.Now comparing the relation between sleeping time and kidney diseases and diabetes.
+
+
+Creating a new data frame involving the variable sleptim1,chckidny,diabetes_detected
+```{r}
+rsq3 <- brfss2013[,c("diabetes_detected","sleptim1","chckidny")]
+rsq3 <- data.frame(rsq3)
+head(rsq3$weight2)
+brfss2013%>%
+  group_by(sleptim1,diabetes_detected,chckidny)%>%
+  summarise(count=n())
+```
+
+Finding the relation between diabetes and total sleep the individual has.
+```{r}
+ggplot(data=subset(brfss2013,!is.na(sleptim1)),aes(x=sleptim1,fill=(diabetes_detected)))+
+  ggtitle("Total sleeping time v/s \n the number of indivduals with diabetes")+
+  xlab("Total sleep in hrs")+
+  ylab("number of individuals")+
+   geom_bar(bins=24,position=position_dodge())+
+  xlim(1,24)
+```
+
+From the above graph it is clear that the total sleeping time of an individual and the diabetes status of an individual are independent of each other.If the two factors were dependent then the total number of diabetic individuals would have been greater where the average sleeping time of individual is less.In other words the data would have been right skewed in terms of diabetic patients.The data here contradicts the assumption we have made.
+
+
+Finding the relation between kidney diseases and sleeping time 
+
+```{r}
+ggplot(data=subset(brfss2013,!is.na(sleptim1)),aes(x=sleptim1,fill=(chckidny)))+
+   geom_bar(bins=24,position=position_dodge())+
+  ggtitle("Total sleeping time v/s \n the number of indivduals with kidney disease")+
+  xlab("Total sleep in hrs")+
+  ylab("number of individuals")+
+  xlim(1,24)
+
+```
+
+Observing the graph we can conclude that the data disproves the assumption that a sleep deprived individual suffers from kidney disease.The number of individuals which have a kidney disease are evenly spread and hence contradict our assumption.To prove our assumption right the data should have been right skewed in terms of number of individuals having kidney problems.
+
+
+
+
+
+
+Conclusion : From the histograms plotted above we can conclude that sleeping time ,kidney diseases and diabetes are not correlated to each other.
