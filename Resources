@@ -14,5 +14,8 @@ https://stackoverflow.com/questions/15951216/too-many-factors-on-x-axis
 https://stackoverflow.com/questions/24901061/in-r-how-do-i-compute-factors-percentage-given-on-different-variable
 http://rprogramming.net/rename-columns-in-r/
 
+Good collection of various commands in r for working on categorical variables:
+http://rstudio-pubs-static.s3.amazonaws.com/2277_404d9b623e0b4dcf9fe0927c38067813.html
+
 Some great projects that I came across during peer review of assignments
 https://s3.amazonaws.com/coursera-uploads/peer-review/5e8e5a1cb5a565b36a8561b05a636e07/Data-analysis-bffss2013---SGM.html
